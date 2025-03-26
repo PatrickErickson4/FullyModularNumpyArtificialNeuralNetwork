@@ -10,10 +10,10 @@ This is a hobby project that I plan on expanding on to classify the MNIST handwr
   - **Layer**: Constructs Fully Connected (Dense) Layers, with base initializations. Supports ReLU, tanh, and sigmoid activations, with softmax or regression classification (mse or softmax)
   - **NeuralNetwork:** Strings together multiple tensors of specified batch size (unspecified is 32) and links them together with a doubly linked list. forward pass and backpropagation are here as well
     - **Features:** 
-      - Adam optimizer (default)
-      - AdamW optimizer (Adam with weight decay) (specify in train as string literal 'AdamW')
-      - .train: trains the model based on the input train and test data. here you can specify hyperparameters.
-      - .test: returns the loss and dataset of classified labels.
-      - .adjust
+      - **Adam optimizer** (default)
+      - **AdamW optimizer** (Adam with weight decay) (specify in train as string literal 'AdamW')
+      - **train**: trains the model based on the input train and test data. here you can specify hyperparameters.
+      - **test**: returns the loss and dataset of classified labels.
+      - **adjustBatches**: manually adjust batch sizes for entire neural network.
 
 **NOTE:** Features are subject to change, as this is a work in progress. Dropout and ease of use updates will be posted here.
