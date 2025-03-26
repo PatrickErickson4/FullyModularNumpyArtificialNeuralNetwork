@@ -137,6 +137,7 @@ class NeuralNetwork:
     # add batch splitter, train sizes, etx
     def train(self,trainSet, trainLabels,eta=.01,epochs=1000):
 
+        self.adjustBatches(self.batchSize)
         #turn to tensors for training requirement
         trainSet = trainSet.T[np.newaxis,:,:]
         trainLabels = trainLabels.T[np.newaxis,:,:]
