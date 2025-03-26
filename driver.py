@@ -49,7 +49,8 @@ x = NeuralNetwork(
                   hidden4 = FullyConnectedLayer(numNodes=10,activation='ReLU'),
                   output = FullyConnectedLayer(numNodes=2,activation='softmax')
                  )
-x.train(trainSet, trainLabels, epochs=100, eta=0.01)
+# specify Adam and AdamW. weight decay means nothing if used with Adam
+x.train(trainSet, trainLabels, epochs=1000, eta=0.01,loss='AdamW', weightDecay=.25)
 
 
 lossTraining, trainGuesses = x.test(trainSet, trainLabels)

@@ -13,14 +13,12 @@ class NeuralNetwork:
         for key, item in kwargs.items():
             self.insertEnd(item)
 
-
-
     def insertEnd(self, toAdd):
 
         if not isinstance(toAdd, FullyConnectedLayer):
             raise Exception("Error when inserting to Layer LinkedList: Must pass in a FullyConnectedLayer object")
         
-        # use He scaling
+        # use He scaling NOTE: Super important for model convergence
         fan_in = self.tail.featureSize
         scale = np.sqrt(2 / fan_in)
 
@@ -46,7 +44,6 @@ class NeuralNetwork:
         # i know this sucks, but i dont care.
         self.adjustBatches(self.batchSize)
 
-        
     
     def adjustBatches(self, newBatchSize):
         self.batchSize = newBatchSize
@@ -100,14 +97,16 @@ class NeuralNetwork:
         curNode = self.tail
         return curNode.activation[1](curNode.activated,trueLabels)
 
-    def backPropagation(self, eta, trueLabels):
+    def backPropagation(self, eta, trueLabels, lam, isAdamW):
 
         curNode = self.tail.prev
         # compute delta(l)*a(l-1) for gradient of weight block 3
         gammaLoss = self.computeLoss(trueLabels)
-        
+        weightsPerLayer = 0
         while curNode is not None:
 
+            if(isAdamW):
+                weightsPerLayer = curNode.weights[:,:,0]
             gradient = np.einsum('ijk,jlk->jlk',gammaLoss,curNode.activated)
             biasGradient = gammaLoss # bias is just the loss for every layer
             # compute new loss gamma2 for previous hidden layer
@@ -123,7 +122,7 @@ class NeuralNetwork:
             m,v,mBias,vBias = curNode.newMoment(gradient,biasGradient)
             mHat,vHat,mHatBias,vHatBias = curNode.biasCorrected(m,v,mBias,vBias)
 
-            etaGrad = eta*(mHat / (np.sqrt(vHat) + 1e-8))
+            etaGrad = eta*(mHat / (np.sqrt(vHat) + 1e-8) + lam*weightsPerLayer)
             etaGradBias = eta*(mHatBias / (np.sqrt(vHatBias) + 1e-8))
 
             weightsToUpdate = curNode.weights[:,:,0] - etaGrad
@@ -135,7 +134,13 @@ class NeuralNetwork:
             curNode = curNode.prev
     
     # add batch splitter, train sizes, etx
-    def train(self,trainSet, trainLabels,eta=.01,epochs=1000):
+    def train(self,trainSet, trainLabels,eta=.01,loss='Adam',epochs=1000,weightDecay=0):
+
+        isAdamW = False
+        if not (loss == 'Adam' or loss == 'AdamW'):
+            raise Exception("Please specify either Adam or AdamW for loss.")
+        if loss == 'AdamW':
+            isAdamW = True
 
         self.adjustBatches(self.batchSize)
         #turn to tensors for training requirement
@@ -155,7 +160,8 @@ class NeuralNetwork:
             refactored = (n // self.batchSize) * self.batchSize 
             trainSetTesseract = trainSetShuffled[:, :, :refactored]
             trainLabelTesseract = trainLabelsShuffled[:, :, :refactored]
-
+            
+            # aggregate batch tensors to tesseracts
             numBatches = refactored // self.batchSize
             trainSetTesseract = trainSetTesseract.reshape(trainSetShuffled.shape[0],trainSetShuffled.shape[1],numBatches,self.batchSize)
             trainLabelTesseract = trainLabelTesseract.reshape(trainLabelsShuffled.shape[0],trainLabelsShuffled.shape[1],numBatches,self.batchSize)
@@ -166,7 +172,7 @@ class NeuralNetwork:
                 
                 self.head.inputs = trainBatch
                 loss += self.forwardPass(labelBatch)
-                self.backPropagation(eta, trueLabels=labelBatch)
+                self.backPropagation(eta,labelBatch,weightDecay,isAdamW)
             
             loss = loss / trainSetTesseract.shape[2]
             if(epochs < 10):
