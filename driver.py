@@ -1,94 +1,71 @@
 from NeuralNetwork import NeuralNetwork
 from Layer import FullyConnectedLayer
+from DataHandler import DataHelper
+import pandas as pd
 import numpy as np
-batch = 4
 
-#np.random.seed(100)
-trueLabels = np.array([[[0, 1, 1, 0],
-                         [1, 0, 0, 1]]])
-#print(trueLabels.shape)
+np.random.seed(100)
+df = (pd.read_csv("datasets/breast_cancer.csv")).dropna()
+columns = df.columns.to_list()
 
-input = np.array([[[0, 0, 1, 1],   # first feature for each sample
-                       [0, 1, 0, 1]]]) # second feature for each sample
+df.replace({'Class': {2: 0, 4: 1}}, inplace=True)
+df = df.to_numpy()
+df = df.astype(int)
+split = np.split(df, [9], axis=1)
 
-singleTest = trueLabels[0:1,0:2,0:1] 
+dataframe = split[0]
+labels = split[1]
 
-singleTrain = input[0:1,0:2,0:1]
-print("single train", singleTrain)
-print("single test", singleTest)
-print(singleTest.shape)
+unique_values = np.unique(labels)
+num_values = 2
+encoded_data = np.zeros((len(labels), num_values), dtype=int)
+for i, value in enumerate(labels):
+    index = np.where(unique_values == value)[0][0]
+    encoded_data[i, index] = 1
 
-print(trueLabels)
-#print("input: ", input)
+labels = encoded_data
+
+print("Cases in dataset: ", len(labels))
+
+trainSet, trainLabels, testSet, testLabels = DataHelper.trainTestSplit(dataframe, labels)
+
+Standardizer = DataHelper.standardizer(trainSet)
+trainSet = DataHelper.standardizeCompute(trainSet,Standardizer)
+testSet = DataHelper.standardizeCompute(testSet,Standardizer)
+
+print("train set, train labels, test set, train labels shapes:")
+print(trainSet.shape)
+print(trainLabels.shape)
+print(testSet.shape)
+print(testLabels.shape)
+
+
 
 x = NeuralNetwork(
-                  inputs = input,
-                  hidden1 = FullyConnectedLayer(numNodes=5,activation='ReLU'),
-                  hidden2 = FullyConnectedLayer(numNodes=1,activation='linear'),
+                  #batchSize=546,
+                  hidden1 = FullyConnectedLayer(numNodes=10,activation='ReLU'),
+                  hidden2 = FullyConnectedLayer(numNodes=10,activation='ReLU'),
+                  hidden3 = FullyConnectedLayer(numNodes=10,activation='ReLU'),
+                  hidden4 = FullyConnectedLayer(numNodes=10,activation='ReLU'),
                   output = FullyConnectedLayer(numNodes=2,activation='softmax')
                  )
-
-print("before:")
-#x.viewNetwork()
-#print("Forward pass, softmaxed: ",yo )
-#print(x.tail.activated.shape)
-#print(trueLabels.shape)
-
-#x.forwardPass()
-
-#print(singleTest)
+x.train(trainSet, trainLabels, epochs=100, eta=0.01)
 
 
-x.train(input,trueLabels)
+lossTraining, trainGuesses = x.test(trainSet, trainLabels)
 
+predicted_train = np.argmax(trainGuesses, axis=1)
+true_train = np.argmax(trainLabels, axis=1)
+train_accuracy = np.mean(predicted_train == true_train) * 100
 
-print("after: ")
+print("\nFinal Training Loss:", lossTraining)
+print("Training Acc: {:.2f}%".format(train_accuracy))
 
-x.head.inputs = singleTrain
-x.forwardPass()
-print("0 1 for XOR: ", singleTest)
-guess = np.mean(x.tail.activated, axis=2)
-print("Guess:" , guess)
+lossTesting, testGuesses = x.test(testSet, testLabels)
 
-x.viewNetwork()
-'''
+predicted_test = np.argmax(testGuesses, axis=1)
+true_test = np.argmax(testLabels, axis=1)
+test_accuracy = np.mean(predicted_test == true_test) * 100
 
-x.adjustBatches(3)
-x.train(input,trueLabels)
-print("after: ")
-
-x.head.inputs = singleTrain
-x.forwardPass()
-print("0 1 for XOR: ", singleTest)
-guess = np.mean(x.tail.activated, axis=2)
-print("Guess:" , guess)
-
-print("First viewnet")
-x.viewNetwork()
-'''
-x.adjustBatches(4)
-#x.train(input,trueLabels)
-
-x.viewNetwork()
-
-
-
-print("after: ")
-
-x.head.inputs = singleTrain
-x.forwardPass()
-print("0 1 for XOR: ", singleTest)
-guess = np.mean(x.tail.activated, axis=2)
-print("Guess:" , guess)
-
-
-'''
-print("Second viewnet")
-x.viewNetwork()
-
-x.adjustBatches(10)
-x.viewNetwork()
-
-x.adjustBatches(3)
-x.viewNetwork()s
-'''
+print("\nFinal Testing Loss:", lossTesting)
+print("Testing Acc: {:.2f}%".format(test_accuracy))

@@ -3,10 +3,10 @@ from Layer import FullyConnectedLayer
 
 class NeuralNetwork:
     
-    def __init__(self,inputs,batchSize=1,**kwargs):
+    def __init__(self,batchSize=32,**kwargs):
 
         #input layer
-        self.head = FullyConnectedLayer(inputs,"linear",first=True)
+        self.head = FullyConnectedLayer(1,"linear")
         self.tail = self.head
         self.batchSize = batchSize
 
@@ -24,12 +24,12 @@ class NeuralNetwork:
         fan_in = self.tail.featureSize
         scale = np.sqrt(2 / fan_in)
 
-        weightsToExpand = np.random.randn(toAdd.featureSize, self.tail.featureSize, 1) * scale
-        self.tail.weights = np.repeat(weightsToExpand, self.batchSize, axis=2)
-
+        self.tail.weights = np.random.randn(toAdd.featureSize, self.tail.featureSize, 1) * scale
         # For biases, it's common to initialize to zero (or small constant)
-        biasToExpand = np.zeros((1, toAdd.featureSize, 1))
-        self.tail.bias = np.repeat(biasToExpand, self.batchSize, axis=2)
+        self.tail.bias = np.zeros((1, toAdd.featureSize, 1))
+
+        toAdd.inputs = np.zeros((1,toAdd.featureSize,1))
+        toAdd.activated = np.zeros((1,toAdd.featureSize,1))
 
         # for adam
         self.tail.m = np.zeros_like(self.tail.weights[:,:,0])
@@ -38,9 +38,15 @@ class NeuralNetwork:
         self.tail.mBias = np.zeros_like(self.tail.bias[:,:,0])
         self.tail.vBias = np.zeros_like(self.tail.bias[:,:,0])
 
+        #connect the tail to the network
         self.tail.next = toAdd
         toAdd.prev = self.tail
         self.tail = toAdd
+
+        # i know this sucks, but i dont care.
+        self.adjustBatches(self.batchSize)
+
+        
     
     def adjustBatches(self, newBatchSize):
         self.batchSize = newBatchSize
@@ -51,7 +57,19 @@ class NeuralNetwork:
         curNode.inputs = np.repeat(curNode.inputs[:,:,0:1], newBatchSize, axis=2)
         curNode.activated = np.repeat(curNode.activated[:,:,0:1], newBatchSize, axis=2)
 
-    def forwardPass(self):
+    
+    def test(self,testSet,trueLabels):
+        
+        self.adjustBatches(len(testSet))
+        testSet = testSet.T[np.newaxis,:,:]
+        trueLabels = trueLabels.T[np.newaxis,:,:]
+
+        self.head.inputs = testSet
+        loss = self.forwardPass(trueLabels)
+
+        return loss, self.tail.activated[0].T
+
+    def forwardPass(self, labels):
         curNode = self.head
         
         while curNode.next is not None:
@@ -60,9 +78,8 @@ class NeuralNetwork:
             curNode = curNode.next
         curNode.activated = curNode.activation[0](curNode.inputs)
 
-        return curNode.activated
-
-
+        return curNode.activation[3](curNode.activated, labels)
+    
     def viewNetwork(self):
         curNode = self.head
         counter = 1
@@ -76,7 +93,7 @@ class NeuralNetwork:
             print(curNode.inputs.shape)
             counter += 1
             curNode = curNode.next
-        print("Tail activated and input dims:",self.tail.activated.shape)
+        print("Tail activated and input dims:", self.tail.activated.shape)
         print(self.tail.inputs.shape)
             
     def computeLoss(self, trueLabels):
@@ -117,27 +134,43 @@ class NeuralNetwork:
             curNode.bias = np.repeat(biasToUpdate[:,:,np.newaxis], self.batchSize, axis=2)
             curNode = curNode.prev
     
-
-
-
     # add batch splitter, train sizes, etx
     def train(self,trainSet, trainLabels,eta=.01,epochs=1000):
 
+        #turn to tensors for training requirement
+        trainSet = trainSet.T[np.newaxis,:,:]
+        trainLabels = trainLabels.T[np.newaxis,:,:]
+
         for epoch in range(epochs):
 
-            # for batch in batchSize
+            loss = 0
+            #shuffle tensor
             indices = np.random.permutation(trainSet.shape[2])
             trainSetShuffled = trainSet[:, :, indices]
             trainLabelsShuffled = trainLabels[:, :, indices]
-            self.head.inputs = trainSetShuffled
 
-            self.forwardPass()
-            if epoch % (int(epochs/10)) == 0:
-                print("loss for epoch: " , epoch, ":", self.computeLoss(trainLabelsShuffled))
-            self.backPropagation(eta, trueLabels=trainLabelsShuffled)
+            # split dataset into batches
+            n = trainSetShuffled.shape[2]
+            refactored = (n // self.batchSize) * self.batchSize 
+            trainSetTesseract = trainSetShuffled[:, :, :refactored]
+            trainLabelTesseract = trainLabelsShuffled[:, :, :refactored]
 
+            numBatches = refactored // self.batchSize
+            trainSetTesseract = trainSetTesseract.reshape(trainSetShuffled.shape[0],trainSetShuffled.shape[1],numBatches,self.batchSize)
+            trainLabelTesseract = trainLabelTesseract.reshape(trainLabelsShuffled.shape[0],trainLabelsShuffled.shape[1],numBatches,self.batchSize)
 
+            for i in range(trainSetTesseract.shape[2]):
+                trainBatch = trainSetTesseract[:, :, i, :]   # selects the i-th batch from trainSetTesseract
+                labelBatch = trainLabelTesseract[:, :, i, :]   # selects the i-th batch from trainLabelTesseract
+                
+                self.head.inputs = trainBatch
+                loss += self.forwardPass(labelBatch)
+                self.backPropagation(eta, trueLabels=labelBatch)
+            
+            loss = loss / trainSetTesseract.shape[2]
+            if(epochs < 10):
+                print("loss for epoch: " , (epoch+1), ":", loss)
+            elif (epoch+1) % (int(epochs/10)) == 0:
+                print("loss for epoch: " , epoch+1, ":", loss)
 
-
-
-
+        return trainSetShuffled, trainLabelsShuffled

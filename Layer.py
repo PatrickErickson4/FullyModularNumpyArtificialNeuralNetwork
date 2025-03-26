@@ -2,20 +2,15 @@ import numpy as np
 
 class FullyConnectedLayer:
 
-    def __init__(self,numNodes,activation,first=False):
+    def __init__(self,numNodes,activation):
 
-        if first:
-            self.inputs = numNodes
-            self.featureSize = numNodes.shape[1]
-
-        else:    
-            if numNodes <= 0:
-                raise Exception("Error in initializatoin for FullyConnectedLayer object: Enter a valid feature size.")
+        if numNodes <= 0:
+            raise Exception("Error in initializatoin for FullyConnectedLayer object: Enter a valid feature size.")
             
-            self.featureSize = numNodes
-            self.inputs = None
-
-        self.activated = None
+        self.featureSize = numNodes
+        self.inputs = np.zeros((1,numNodes,1))
+        self.activated = np.zeros((1,numNodes,1))
+            
         self.activation = self._defineActivation(activation)
         self.weights = None
         self.bias = None
@@ -26,7 +21,6 @@ class FullyConnectedLayer:
 
         self.next = None
         self.prev = None
-        
     
     def adjustBatchSize(self, newBatchSize):
         self.weights = np.repeat(self.weights[:,:,0:1], newBatchSize, axis=2)
@@ -62,9 +56,9 @@ class FullyConnectedLayer:
         
         #activations and derivatives of final heads for loss and gradient w/r to loss
         elif activation.lower() == 'mse':
-            return lambda x: x, lambda x,y: x-y, 'mse'
+            return lambda x: x, lambda x,y: x-y, 'mse', lambda x,y: np.mean(np.sum(np.square(x - y), axis=1))
         elif activation.lower() == 'softmax':
-            return lambda x: self._softmax(x), lambda x, y: (x - y).reshape(x.shape),'softmax'
+            return lambda x: self._softmax(x), lambda x, y: (x - y).reshape(x.shape),'softmax',lambda x,y: -np.mean(np.sum(np.multiply(y, np.log(x)), axis=1))
         else:
             raise Exception("Enter a valid activation function.")
         
