@@ -2,11 +2,17 @@ import numpy as np
 
 class FullyConnectedLayer:
 
-    def __init__(self,numNodes,activation):
+    def __init__(self,numNodes,activation, dropout = 0):
 
         if numNodes <= 0:
             raise Exception("Error in initializatoin for FullyConnectedLayer object: Enter a valid feature size.")
-            
+        if dropout >= 1 or dropout < 0:
+            raise Exception("Pick better dropout foo (0 < dropout < 1).")
+        if dropout != 0 and (activation.lower() == 'softmax' or activation.lower() == 'mse'):
+            raise Exception("Do not perform dropout on final layer.")
+
+        self.dropout = dropout
+        self.mask = [1]
         self.featureSize = numNodes
         self.inputs = np.zeros((1,numNodes,1))
         self.activated = np.zeros((1,numNodes,1))

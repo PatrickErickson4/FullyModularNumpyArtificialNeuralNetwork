@@ -16,6 +16,7 @@ split = np.split(df, [9], axis=1)
 dataframe = split[0]
 labels = split[1]
 
+#split binary category into 2 softmax categories
 unique_values = np.unique(labels)
 num_values = 2
 encoded_data = np.zeros((len(labels), num_values), dtype=int)
@@ -43,14 +44,14 @@ print(testLabels.shape)
 
 x = NeuralNetwork(
                   #batchSize=546. Notice, batchSize = 1 is stochastic. need a lot of regularization for stochastic ADAM
-                  hidden1 = FullyConnectedLayer(numNodes=10,activation='ReLU'),
+                  hidden1 = FullyConnectedLayer(numNodes=10,activation='ReLU',dropout=.3),
                   hidden2 = FullyConnectedLayer(numNodes=10,activation='ReLU'),
-                  hidden3 = FullyConnectedLayer(numNodes=10,activation='ReLU'),
-                  hidden4 = FullyConnectedLayer(numNodes=10,activation='ReLU'),
+                  hidden3 = FullyConnectedLayer(numNodes=10,activation='ReLU',dropout=.3),
+                  hidden4 = FullyConnectedLayer(numNodes=10,activation='ReLU',dropout=.1),
                   output = FullyConnectedLayer(numNodes=2,activation='softmax')
                  )
 # specify Adam and AdamW. weight decay means nothing if used with Adam
-x.train(trainSet, trainLabels, epochs=1000, eta=0.01,loss='AdamW', weightDecay=.25)
+x.train(trainSet, trainLabels, epochs=1000, eta=0.001,loss='AdamW', weightDecay=.25)
 
 
 lossTraining, trainGuesses = x.test(trainSet, trainLabels)

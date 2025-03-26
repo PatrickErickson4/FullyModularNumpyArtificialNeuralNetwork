@@ -29,7 +29,7 @@ class NeuralNetwork:
         toAdd.inputs = np.zeros((1,toAdd.featureSize,1))
         toAdd.activated = np.zeros((1,toAdd.featureSize,1))
 
-        # for adam
+        # for adam momentum (m) and momentum moving average
         self.tail.m = np.zeros_like(self.tail.weights[:,:,0])
         self.tail.v = np.zeros_like(self.tail.weights[:,:,0])
 
@@ -54,6 +54,13 @@ class NeuralNetwork:
         curNode.inputs = np.repeat(curNode.inputs[:,:,0:1], newBatchSize, axis=2)
         curNode.activated = np.repeat(curNode.activated[:,:,0:1], newBatchSize, axis=2)
 
+    def checkDropOut(self, toCheck):
+        mask = [1]
+        if toCheck.dropout != 0:
+            mask = (1/(1-toCheck.dropout))*np.random.binomial(1,(1-toCheck.dropout),toCheck.weights.shape[0])
+            if len(np.unique(mask)) == 1:
+                toCheck.mask[0] = 1/(1-toCheck.dropout)
+        return mask
     
     def test(self,testSet,trueLabels):
         
@@ -71,7 +78,9 @@ class NeuralNetwork:
         
         while curNode.next is not None:
             curNode.activated = curNode.activation[0](curNode.inputs)
-            curNode.next.inputs = np.einsum('ijk,ljk->ilk', curNode.activated, curNode.weights) + curNode.bias
+            curNode.mask = self.checkDropOut(curNode)
+            weightsWithDropout = np.einsum('i,ijk->ijk',curNode.mask,curNode.weights)
+            curNode.next.inputs = np.einsum('ijk,ljk->ilk', curNode.activated, weightsWithDropout) + curNode.bias
             curNode = curNode.next
         curNode.activated = curNode.activation[0](curNode.inputs)
 
@@ -105,12 +114,13 @@ class NeuralNetwork:
         weightsPerLayer = 0
         while curNode is not None:
 
+            weightsWithDropout = np.einsum('i,ijk->ijk',curNode.mask,curNode.weights)
             if(isAdamW):
-                weightsPerLayer = curNode.weights[:,:,0]
+                weightsPerLayer = weightsWithDropout[:,:,0]
             gradient = np.einsum('ijk,jlk->jlk',gammaLoss,curNode.activated)
             biasGradient = gammaLoss # bias is just the loss for every layer
             # compute new loss gamma2 for previous hidden layer
-            wTgammaLoss = np.einsum('ijk,lik->ljk',curNode.weights,gammaLoss)
+            wTgammaLoss = np.einsum('ijk,lik->ljk',(weightsWithDropout),gammaLoss)
 
             activationDerivative = curNode.activation[1](curNode.inputs)
             gammaLoss = np.multiply(wTgammaLoss,activationDerivative)
