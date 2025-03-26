@@ -42,7 +42,7 @@ print(testLabels.shape)
 
 
 x = NeuralNetwork(
-                  #batchSize=546,
+                  #batchSize=546. Notice, batchSize = 1 is stochastic. need a lot of regularization for stochastic ADAM
                   hidden1 = FullyConnectedLayer(numNodes=10,activation='ReLU'),
                   hidden2 = FullyConnectedLayer(numNodes=10,activation='ReLU'),
                   hidden3 = FullyConnectedLayer(numNodes=10,activation='ReLU'),

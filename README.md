@@ -17,3 +17,7 @@ This is a hobby project that I plan on expanding on to classify the MNIST handwr
       - **adjustBatches**: manually adjust batch sizes for entire neural network.
 
 **NOTE:** Features are subject to change, as this is a work in progress. Dropout and ease of use updates will be posted here.
+
+## Dataset
+---
+The dataset can be found [here](https://www.kaggle.com/datasets/marshuu/breast-cancer).
