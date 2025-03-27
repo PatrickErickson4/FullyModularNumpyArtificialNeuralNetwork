@@ -20,6 +20,7 @@ class FullyConnectedLayer:
         self.activation = self._defineActivation(activation)
         self.weights = None
         self.bias = None
+
         self.m = None # moment
         self.v = None # second moment
         self.mBias = None # moment
@@ -29,6 +30,7 @@ class FullyConnectedLayer:
         self.prev = None
     
     def adjustBatchSize(self, newBatchSize):
+        
         self.weights = np.repeat(self.weights[:,:,0:1], newBatchSize, axis=2)
         self.bias = np.repeat(self.bias[:,:,0:1], newBatchSize, axis=2)
         self.inputs = np.repeat(self.inputs[:,:,0:1], newBatchSize, axis=2)

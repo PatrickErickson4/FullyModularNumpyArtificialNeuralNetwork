@@ -3,32 +3,19 @@ from Layer import FullyConnectedLayer
 from DataHandler import DataHelper
 import pandas as pd
 import numpy as np
+from tensorflow.keras.datasets import mnist
+from keras.utils import to_categorical 
 
 np.random.seed(100)
-df = (pd.read_csv("datasets/breast_cancer.csv")).dropna()
-columns = df.columns.to_list()
 
-df.replace({'Class': {2: 0, 4: 1}}, inplace=True)
-df = df.to_numpy()
-df = df.astype(int)
-split = np.split(df, [9], axis=1)
+# Load the MNIST dataset
+(digitsTrainSet, digitsTrainLabels), (digitsTestSet, digitsTestLabels) = mnist.load_data()
+trainLabels = to_categorical(digitsTrainLabels, num_classes=10)
+testLabels = to_categorical(digitsTestLabels, num_classes=10)
+trainSet = digitsTrainSet.reshape(60000, 28*28) # stretch out to naively get 784 features
+testSet = digitsTestSet.reshape(10000, 28*28)
 
-dataframe = split[0]
-labels = split[1]
-
-#split binary category into 2 softmax categories
-unique_values = np.unique(labels)
-num_values = 2
-encoded_data = np.zeros((len(labels), num_values), dtype=int)
-for i, value in enumerate(labels):
-    index = np.where(unique_values == value)[0][0]
-    encoded_data[i, index] = 1
-
-labels = encoded_data
-
-print("Cases in dataset: ", len(labels))
-
-trainSet, trainLabels, testSet, testLabels = DataHelper.trainTestSplit(dataframe, labels)
+#trainSet, trainLabels, testSet, testLabels = DataHelper.trainTestSplit(trainSet, trainLabels) # used to find hyperparameters
 
 Standardizer = DataHelper.standardizer(trainSet)
 trainSet = DataHelper.standardizeCompute(trainSet,Standardizer)
@@ -42,18 +29,16 @@ print(testLabels.shape)
 
 
 x = NeuralNetwork(
-                  #batchSize=546. Notice, batchSize = 1 is stochastic. need a lot of regularization for stochastic ADAM
-                  inputDropout=.3,
-                  hidden1 = FullyConnectedLayer(numNodes=10,activation='ReLU',dropout=.3),
-                  hidden2 = FullyConnectedLayer(numNodes=10,activation='ReLU',dropout=.1),
-                  hidden3 = FullyConnectedLayer(numNodes=10,activation='ReLU'),
-                  hidden4 = FullyConnectedLayer(numNodes=10,activation='ReLU',dropout=.1),
-                  output = FullyConnectedLayer(numNodes=2,activation='softmax')
+                  #batchSize=32, #Notice, batchSize = 1 is stochastic. need a lot of regularization for stochastic ADAM
+                  inputDropout=.2,
+                  hidden1 = FullyConnectedLayer(numNodes=100,activation='ReLU',dropout=.5),
+                  hidden2 = FullyConnectedLayer(numNodes=100,activation='ReLU',dropout=.5),
+                  hidden3 = FullyConnectedLayer(numNodes=100,activation='ReLU',dropout=.5),
+                  output = FullyConnectedLayer(numNodes=10,activation='softmax')
                  )
+
 # specify Adam and AdamW. weight decay means nothing if used with Adam
-x.train(trainSet, trainLabels, epochs=1000, eta=.001,loss='AdamW',weightDecay=.17)
-
-
+x.train(trainSet, trainLabels, epochs=12, eta=.001,loss='AdamW',weightDecay=.2)
 lossTraining, trainGuesses = x.test(trainSet, trainLabels)
 
 predicted_train = np.argmax(trainGuesses, axis=1)

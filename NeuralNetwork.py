@@ -71,14 +71,49 @@ class NeuralNetwork:
     
     def test(self,testSet,trueLabels):
         
-        self.adjustBatches(len(testSet))
+        self.adjustBatches(self.batchSize)
         testSet = testSet.T[np.newaxis,:,:]
         trueLabels = trueLabels.T[np.newaxis,:,:]
+        guesses = []
 
+        # split dataset into batches
+        n = testSet.shape[2]
+        refactored = (n // self.batchSize) * self.batchSize 
+        testSetTesseract = testSet[:, :, :refactored]
+        testLabelTesseract = trueLabels[:, :, :refactored]
+        
+        # aggregate batch tensors to tesseracts
+        numBatches = refactored // self.batchSize
+        testSetTesseract = testSetTesseract.reshape(testSet.shape[0],testSet.shape[1],numBatches,self.batchSize)
+        testLabelTesseract = testLabelTesseract.reshape(trueLabels.shape[0],trueLabels.shape[1],numBatches,self.batchSize)
         self.head.inputs = testSet
-        loss = self.forwardPassTest(trueLabels)
 
-        return loss, self.tail.activated[0].T
+        loss = 0
+        for i in range(testSetTesseract.shape[2]):
+            testBatch = testSetTesseract[:, :, i, :]   # selects the i-th batch from trainSetTesseract
+            labelBatch = testLabelTesseract[:, :, i, :]   # selects the i-th batch from trainLabelTesseract
+
+            self.head.inputs = testBatch
+            loss += self.forwardPassTest(labelBatch)
+            guesses.append(self.tail.activated[0].T)
+
+        remainder = n % self.batchSize
+        numBatches = testSetTesseract.shape[2]
+        if remainder != 0:
+
+            testBatch = testSet[:, :, refactored:]  # remaining samples
+            labelBatch = trueLabels[:, :, refactored:]
+            self.adjustBatches(testBatch.shape[2])
+            self.head.inputs = testBatch
+            loss += self.forwardPassTest(labelBatch)
+            self.adjustBatches(self.batchSize)
+            guesses.append(self.tail.activated[0].T)
+            numBatches += 1 
+
+        guesses = np.concatenate(guesses, axis=0)
+
+        loss = loss / numBatches
+        return loss, guesses
 
 
     def forwardPassTest(self, labels):
