@@ -30,13 +30,12 @@ print(testLabels.shape)
 x = NeuralNetwork(
                   # NOTE: Example params
                   #batchSize=128, #default 32
-                  #inputDropout=.2,
                   hidden2 = FullyConnectedLayer(numNodes=400,activation='ReLU'), 
                   hidden3 = FullyConnectedLayer(numNodes=400,activation='ReLU'),
                   output = FullyConnectedLayer(numNodes=10,activation='softmax')
                  )
 # specify Adam and AdamW. weight decay means nothing if used with Adam
-x.train(trainSet, trainLabels, epochs=12, learningRate=.001,loss='AdamW',weightDecay=.001) 
+x.train(trainSet, trainLabels, epochs=12, learningRate=.001,loss='AdamW',weightDecay=.1) 
 lossTraining, trainGuesses = x.test(trainSet, trainLabels)
 
 predicted_train = np.argmax(trainGuesses, axis=1)
