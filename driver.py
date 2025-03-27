@@ -41,17 +41,17 @@ print(testSet.shape)
 print(testLabels.shape)
 
 
-
 x = NeuralNetwork(
                   #batchSize=546. Notice, batchSize = 1 is stochastic. need a lot of regularization for stochastic ADAM
+                  inputDropout=.3,
                   hidden1 = FullyConnectedLayer(numNodes=10,activation='ReLU',dropout=.3),
-                  hidden2 = FullyConnectedLayer(numNodes=10,activation='ReLU'),
-                  hidden3 = FullyConnectedLayer(numNodes=10,activation='ReLU',dropout=.3),
+                  hidden2 = FullyConnectedLayer(numNodes=10,activation='ReLU',dropout=.1),
+                  hidden3 = FullyConnectedLayer(numNodes=10,activation='ReLU'),
                   hidden4 = FullyConnectedLayer(numNodes=10,activation='ReLU',dropout=.1),
                   output = FullyConnectedLayer(numNodes=2,activation='softmax')
                  )
 # specify Adam and AdamW. weight decay means nothing if used with Adam
-x.train(trainSet, trainLabels, epochs=1000, eta=0.001,loss='AdamW', weightDecay=.25)
+x.train(trainSet, trainLabels, epochs=1000, eta=.001,loss='AdamW',weightDecay=.17)
 
 
 lossTraining, trainGuesses = x.test(trainSet, trainLabels)

@@ -3,15 +3,18 @@ from Layer import FullyConnectedLayer
 
 class NeuralNetwork:
     
-    def __init__(self,batchSize=32,**kwargs):
+    def __init__(self,batchSize=32,inputDropout=0,**kwargs):
 
         #input layer
-        self.head = FullyConnectedLayer(1,"linear")
+        self.numLayers = 1
+        self.head = FullyConnectedLayer(1,"linear",inputDropout)
         self.tail = self.head
         self.batchSize = batchSize
 
         for key, item in kwargs.items():
             self.insertEnd(item)
+        if self.numLayers < 2:
+            raise Exception("Must specify at least 1 layer for the neural network.")
 
     def insertEnd(self, toAdd):
 
@@ -43,6 +46,7 @@ class NeuralNetwork:
 
         # i know this sucks, but i dont care.
         self.adjustBatches(self.batchSize)
+        self.numLayers += 1
 
     
     def adjustBatches(self, newBatchSize):
@@ -54,10 +58,13 @@ class NeuralNetwork:
         curNode.inputs = np.repeat(curNode.inputs[:,:,0:1], newBatchSize, axis=2)
         curNode.activated = np.repeat(curNode.activated[:,:,0:1], newBatchSize, axis=2)
 
-    def checkDropOut(self, toCheck):
+    def checkDropOut(self, toCheck, input=False):
+        size = toCheck.weights.shape[0]
+        if input:
+            size = toCheck.inputs.shape[1]
         mask = [1]
         if toCheck.dropout != 0:
-            mask = (1/(1-toCheck.dropout))*np.random.binomial(1,(1-toCheck.dropout),toCheck.weights.shape[0])
+            mask = (1/(1-toCheck.dropout))*np.random.binomial(1,(1-toCheck.dropout),size)
             if len(np.unique(mask)) == 1:
                 toCheck.mask[0] = 1/(1-toCheck.dropout)
         return mask
@@ -69,13 +76,35 @@ class NeuralNetwork:
         trueLabels = trueLabels.T[np.newaxis,:,:]
 
         self.head.inputs = testSet
-        loss = self.forwardPass(trueLabels)
+        loss = self.forwardPassTest(trueLabels)
 
         return loss, self.tail.activated[0].T
 
-    def forwardPass(self, labels):
+
+    def forwardPassTest(self, labels):
+
         curNode = self.head
-        
+
+        while curNode.next is not None:
+            curNode.activated = curNode.activation[0](curNode.inputs)
+            curNode.next.inputs = np.einsum('ijk,ljk->ilk', curNode.activated, curNode.weights) + curNode.bias
+            curNode = curNode.next
+        curNode.activated = curNode.activation[0](curNode.inputs)
+
+        return curNode.activation[3](curNode.activated, labels)
+
+    def forwardPassTrain(self, labels):
+
+        curNode = self.head # handles input dropout
+
+        curNode.activated = curNode.activation[0](curNode.inputs)
+        curNode.mask = self.checkDropOut(curNode, input=True)
+        inputsWithDropout = np.einsum('j,ijk->ijk',curNode.mask,curNode.activated)
+        curNode.mask = self.checkDropOut(curNode)
+        weightsWithDropout = np.einsum('i,ijk->ijk',curNode.mask,curNode.weights)
+        curNode.next.inputs = np.einsum('ijk,ljk->ilk', inputsWithDropout, weightsWithDropout) + curNode.bias
+        curNode = curNode.next
+
         while curNode.next is not None:
             curNode.activated = curNode.activation[0](curNode.inputs)
             curNode.mask = self.checkDropOut(curNode)
@@ -86,6 +115,8 @@ class NeuralNetwork:
 
         return curNode.activation[3](curNode.activated, labels)
     
+    '''
+    # used for debugging
     def viewNetwork(self):
         curNode = self.head
         counter = 1
@@ -101,7 +132,8 @@ class NeuralNetwork:
             curNode = curNode.next
         print("Tail activated and input dims:", self.tail.activated.shape)
         print(self.tail.inputs.shape)
-            
+    '''
+
     def computeLoss(self, trueLabels):
         curNode = self.tail
         return curNode.activation[1](curNode.activated,trueLabels)
@@ -149,8 +181,7 @@ class NeuralNetwork:
         isAdamW = False
         if not (loss == 'Adam' or loss == 'AdamW'):
             raise Exception("Please specify either Adam or AdamW for loss.")
-        if loss == 'AdamW':
-            isAdamW = True
+        isAdamW = loss == 'AdamW'
 
         self.adjustBatches(self.batchSize)
         #turn to tensors for training requirement
@@ -181,7 +212,7 @@ class NeuralNetwork:
                 labelBatch = trainLabelTesseract[:, :, i, :]   # selects the i-th batch from trainLabelTesseract
                 
                 self.head.inputs = trainBatch
-                loss += self.forwardPass(labelBatch)
+                loss += self.forwardPassTrain(labelBatch)
                 self.backPropagation(eta,labelBatch,weightDecay,isAdamW)
             
             loss = loss / trainSetTesseract.shape[2]

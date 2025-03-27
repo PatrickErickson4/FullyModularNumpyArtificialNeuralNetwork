@@ -64,7 +64,7 @@ class FullyConnectedLayer:
         elif activation.lower() == 'mse':
             return lambda x: x, lambda x,y: x-y, 'mse', lambda x,y: np.mean(np.sum(np.square(x - y), axis=1))
         elif activation.lower() == 'softmax':
-            return lambda x: self._softmax(x), lambda x, y: (x - y).reshape(x.shape),'softmax', lambda x,y: -np.mean(np.sum(np.multiply(y, np.log(x)), axis=1))
+            return lambda x: self._softmax(x), lambda x, y: (x - y).reshape(x.shape),'softmax', lambda x,y: -np.mean(np.sum(np.multiply(y, np.log(x + 1e-8)), axis=1))
         else:
             raise Exception("Enter a valid activation function.")
         

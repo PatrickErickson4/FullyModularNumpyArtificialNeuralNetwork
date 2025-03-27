@@ -15,8 +15,11 @@ This is a hobby project that I plan on expanding on to classify the MNIST handwr
       - **train**: trains the model based on the input train and test data. here you can specify hyperparameters.
       - **test**: returns the loss and dataset of classified labels.
       - **adjustBatches**: manually adjust batch sizes for entire neural network.
+      - **Input Dropout**: Can be specified in model initialization. drops some percentage of input features for more robust training
+      - **Dropout**: Implemented a per-layer dropout
 
-**NOTE:** Features are subject to change, as this is a work in progress. Dropout and ease of use updates will be posted here.
+
+**NOTE:** Features are subject to change. More explicit docstrings will be added later.
 
 ## Dataset
 ---
