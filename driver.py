@@ -6,7 +6,7 @@ from tensorflow.keras.datasets import mnist
 from keras.utils import to_categorical 
 
 
-# Load the MNIST dataset
+# Load the MNIST dataset and split labels into one-hot
 (digitsTrainSet, digitsTrainLabels), (digitsTestSet, digitsTestLabels) = mnist.load_data()
 trainLabels = to_categorical(digitsTrainLabels, num_classes=10)
 testLabels = to_categorical(digitsTestLabels, num_classes=10)
@@ -15,7 +15,6 @@ testSet = digitsTestSet.reshape(10000, 28*28)
 
 #trainSet, trainLabels, testSet, testLabels = DataHelper.trainTestSplit(trainSet, trainLabels) # cross-validation used to find hyperparameters
 np.random.seed(100) # unseeded for cv
-
 
 Standardizer = DataHelper.standardizer(trainSet)
 trainSet = DataHelper.standardizeCompute(trainSet,Standardizer)
@@ -32,13 +31,12 @@ x = NeuralNetwork(
                   # NOTE: Example params
                   #batchSize=128, #default 32
                   #inputDropout=.2,
-                  hidden2 = FullyConnectedLayer(numNodes=400,activation='ReLU',dropout=.25), 
-                  hidden3 = FullyConnectedLayer(numNodes=400,activation='ReLU',dropout=.25),
+                  hidden2 = FullyConnectedLayer(numNodes=400,activation='ReLU'), 
+                  hidden3 = FullyConnectedLayer(numNodes=400,activation='ReLU'),
                   output = FullyConnectedLayer(numNodes=10,activation='softmax')
                  )
-
 # specify Adam and AdamW. weight decay means nothing if used with Adam
-x.train(trainSet, trainLabels, epochs=12, eta=.001,loss='AdamW',weightDecay=.15) # best epochs=10
+x.train(trainSet, trainLabels, epochs=12, learningRate=.001,loss='AdamW',weightDecay=.001) 
 lossTraining, trainGuesses = x.test(trainSet, trainLabels)
 
 predicted_train = np.argmax(trainGuesses, axis=1)

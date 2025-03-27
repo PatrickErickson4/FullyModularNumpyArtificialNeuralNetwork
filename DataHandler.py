@@ -1,8 +1,18 @@
+'''
+@author: Patrick Erickson
+Project Name: Data Handler
+Project Description: Constructs a modular implementation of useful data manipulation methods, inspired
+by sci-kit learn
+'''
 import numpy as np
 import matplotlib.pyplot as plt
 
 class DataHelper:
-        
+    '''
+    This class contains useful functions for training, splitting, standardizing, and un-normalizing the data.
+    NOTE: This only works with 2D matrices/data tables in numpy (not pandas compatible)
+    '''
+    
     def trainTestSplit(features, labels, trainSize=None, testSize=None, randomState=None):
         '''
         Used on a split label and feature dataset. Will automatically handle single input training and testing.

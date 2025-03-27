@@ -8,7 +8,7 @@ This is a hobby project that I plan on expanding on to classify the MNIST handwr
 
   - **Data Handler Class**: contains useful functions such as train-test-split, standardization, etc. Taken directly from my logistic regression project.
   - **Layer**: Constructs Fully Connected (Dense) Layers, with base initializations. Supports ReLU, tanh, and sigmoid activations, with softmax or regression classification (mse or softmax)
-  - **NeuralNetwork:** Strings together multiple tensors of specified batch size (unspecified is 32) and links them together with a doubly linked list. forward pass and backpropagation are here as well
+  - **NeuralNetwork:** Strings together multiple tensors of specified batch size (unspecified is 32) and links them together with a doubly linked list. forward pass and backpropagation are here as well.
     - **Modular Features:** 
       - **Individual Modularized Layers**: Construct Standalone layers with ```FullyConnectedLayer(numNodes,activation,dropout=p)```. Note that the input layer is constructed for you.
       - **Specifiable Layer architecture**: after specifying batch size and input dropout (optional), ```**kwargs``` allows for any number of ```layer1 = FullyConnectedLayer(),layer2 = FullyConnectedLayer()```.   
