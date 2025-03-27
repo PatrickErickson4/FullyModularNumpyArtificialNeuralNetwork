@@ -1,12 +1,10 @@
 from NeuralNetwork import NeuralNetwork
 from Layer import FullyConnectedLayer
 from DataHandler import DataHelper
-import pandas as pd
 import numpy as np
 from tensorflow.keras.datasets import mnist
 from keras.utils import to_categorical 
 
-np.random.seed(100)
 
 # Load the MNIST dataset
 (digitsTrainSet, digitsTrainLabels), (digitsTestSet, digitsTestLabels) = mnist.load_data()
@@ -15,7 +13,9 @@ testLabels = to_categorical(digitsTestLabels, num_classes=10)
 trainSet = digitsTrainSet.reshape(60000, 28*28) # stretch out to naively get 784 features
 testSet = digitsTestSet.reshape(10000, 28*28)
 
-#trainSet, trainLabels, testSet, testLabels = DataHelper.trainTestSplit(trainSet, trainLabels) # used to find hyperparameters
+#trainSet, trainLabels, testSet, testLabels = DataHelper.trainTestSplit(trainSet, trainLabels) # cross-validation used to find hyperparameters
+np.random.seed(100) # unseeded for cv
+
 
 Standardizer = DataHelper.standardizer(trainSet)
 trainSet = DataHelper.standardizeCompute(trainSet,Standardizer)
@@ -29,16 +29,16 @@ print(testLabels.shape)
 
 
 x = NeuralNetwork(
-                  #batchSize=32, #Notice, batchSize = 1 is stochastic. need a lot of regularization for stochastic ADAM
-                  inputDropout=.2,
-                  hidden1 = FullyConnectedLayer(numNodes=100,activation='ReLU',dropout=.5),
-                  hidden2 = FullyConnectedLayer(numNodes=100,activation='ReLU',dropout=.5),
-                  hidden3 = FullyConnectedLayer(numNodes=100,activation='ReLU',dropout=.5),
+                  # NOTE: Example params
+                  #batchSize=128, #default 32
+                  #inputDropout=.2,
+                  hidden2 = FullyConnectedLayer(numNodes=400,activation='ReLU',dropout=.25), 
+                  hidden3 = FullyConnectedLayer(numNodes=400,activation='ReLU',dropout=.25),
                   output = FullyConnectedLayer(numNodes=10,activation='softmax')
                  )
 
 # specify Adam and AdamW. weight decay means nothing if used with Adam
-x.train(trainSet, trainLabels, epochs=12, eta=.001,loss='AdamW',weightDecay=.2)
+x.train(trainSet, trainLabels, epochs=12, eta=.001,loss='AdamW',weightDecay=.15) # best epochs=10
 lossTraining, trainGuesses = x.test(trainSet, trainLabels)
 
 predicted_train = np.argmax(trainGuesses, axis=1)
