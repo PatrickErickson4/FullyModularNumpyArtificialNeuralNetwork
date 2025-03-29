@@ -1,4 +1,4 @@
-# Custom Implemented Neural Network
+# Fully Modular Numpy-restricted Neural Network with Adam Optimization and Regularization
 ---
 
 This is a hobby project that used to classify the MNIST handwritten digit dataset with. This is my own custom-implemented version of a neural-network, utilizing an architecture that consists of tensor batches of doubly linked link lists in an attempt to reduce the overhead of pythonic processes. The goal is to make the most use out of numpy's vectorize operations as possible. Features were constructed with the use of a basic logistic regression dataset, then validated with MNIST. This validation was able to produce up to a **97% test accuracy**. MNIST h5 models is provided, trained on this neural network architecture. You can reproduce it running the modelConstructor.ipynb file, and mess around with it in drawing.py.
@@ -27,7 +27,7 @@ This is a hobby project that used to classify the MNIST handwritten digit datase
   - **Interactives**:
     - **tutorial.ipynb**: shows you how to implement the Neural Network
     - **modelConstructor.ipynb**: the file in which I trained the MNIST models in. Feel free to try and find one yourself!
-    - **drawing.py**: An AI coding assisted .py file that utilizes the models trained, where you can draw digits and have the models try to predict them! (It kind of blows, it likes the number 6 a lot. This is to be expected though, since MNIST is super clean data with not a lot of variation).
+    - **drawing.py**: An AI coding assisted .py file that utilizes the models trained, where you can draw digits and have the models try to predict them! (It kind of blows, it likes the number 6 a lot. This is to be expected though, since MNIST is super clean data with not a lot of variation). Can be found in the outermost layer of the directory.
 
 
 
