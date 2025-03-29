@@ -1,7 +1,7 @@
 # Fully Modular Numpy-restricted Neural Network with Adam Optimization and Regularization
 ---
 
-This is a hobby project that used to classify the MNIST handwritten digit dataset with. This is my own custom-implemented version of a neural-network, utilizing an architecture that consists of tensor batches of doubly linked link lists in an attempt to reduce the overhead of pythonic processes. The goal is to make the most use out of numpy's vectorize operations as possible. Features were constructed with the use of a basic logistic regression dataset, then validated with MNIST. This validation was able to produce up to a **97% test accuracy**. MNIST h5 models is provided, trained on this neural network architecture. You can reproduce it running the modelConstructor.ipynb file, and mess around with it in drawing.py.
+This is a hobby project that used to classify the MNIST handwritten digit dataset with. This is my own custom-implemented version of a neural-network, utilizing an architecture that consists of tensor batches of doubly linked link lists in an attempt to reduce the overhead of pythonic processes. The architecture consists of chained tensors of weightmatrices multiplied by the dimensions of their batches, which are then fed forward and propagated, with einsums to simplify logic of transposes and matmuls. The goal is to make the most use out of numpy's vectorize operations as possible. Features were constructed with the use of a basic logistic regression dataset, then validated with MNIST. This validation was able to produce up to a **97% test accuracy**. MNIST h5 models trained on this neural network architecture are provided. You can reproduce it running the modelConstructor.ipynb file, and mess around with it in drawing.py.
 
 
 **NOTE**: You may be confused as to why you see tensorflow. Tensorflow is used solely to download the MNIST handwritten digits dataset.
@@ -9,7 +9,7 @@ This is a hobby project that used to classify the MNIST handwritten digit datase
 ## Features
 ---
   - **NeuralNetworkScript**:
-    - **Data Handler Class**: contains useful functions such as train-test-split, standardization, etc. Taken directly from my logistic regression project.
+    - **Data Handler Class**: contains useful functions such as train-test-split, standardization, a one-hot encoder, and unnormalization. Taken directly from my logistic regression project, aside from the one-hot encoding.
     - **Layer**: Constructs Fully Connected (Dense) Layers, with base initializations. Supports ReLU, tanh, and sigmoid activations, with regression or classification (mse or softmax) as a final layer.
     - **Neural Network:** Strings together multiple tensors of specified batch size (unspecified is 32) and links them together with a doubly linked list. forward pass and backpropagation are here as well.
       - **Modular Features:** 
