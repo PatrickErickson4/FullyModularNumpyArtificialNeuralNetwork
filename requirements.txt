@@ -2,3 +2,6 @@ numpy
 pandas
 matplotlib
 tensorflow
+h5py
+PIL
+tkinter
