@@ -95,7 +95,7 @@ class FullyConnectedLayer:
         self.vBias = Beta2*self.vBias + (1-Beta2)*(biasGrad**2)
         return self.m, self.v, self.mBias, self.vBias
     
-    def biasCorrected(self,m1,m2,m1Bias,m2Bias,Beta1=.9,Beta2=.999):
+    def biasCorrected(self,m1,m2,m1Bias,m2Bias,iterations,Beta1=.9,Beta2=.999,):
         '''
         Bias corrects the new moments and its moving averages so that when first calculating gradients, we aren't biased towards 0.
         NOTE: this is layer dependent, and each layer will have its own moment.
@@ -108,8 +108,7 @@ class FullyConnectedLayer:
         Beta1: constant, conventionally .9
         Beta2: constant, conventionally .999
         '''
-
-        return m1/(1-Beta1), m2/(1-Beta2),m1Bias/(1-Beta1), m2Bias/(1-Beta2)
+        return m1/(1-Beta1**iterations), m2/(1-Beta2**iterations),m1Bias/(1-Beta1**iterations), m2Bias/(1-Beta2**iterations)
 
 
     def _softmax(self,x):

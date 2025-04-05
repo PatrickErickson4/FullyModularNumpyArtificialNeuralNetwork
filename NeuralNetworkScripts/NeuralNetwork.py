@@ -51,6 +51,7 @@ class NeuralNetwork:
         '''
         if model is None:
             #automatic input layer handling
+            self.iterations = 1
             self.numLayers = 1
             self.head = FullyConnectedLayer(1,"linear",inputDropout)
             self.tail = self.head
@@ -75,7 +76,7 @@ class NeuralNetwork:
                     raise Exception("softmax or mse should only be used for the final layer.")
                 curNode = curNode.prev
         else:
-            
+            self.iterations = 1
             #unload with h5py
             with h5py.File(model + ".h5", "r") as f:
                 
@@ -216,6 +217,7 @@ class NeuralNetwork:
         # of epochs, the dataset will incorperate the missing datapoints in the leftover batch
 
         # we return the shuffled train set and labels in case the client wishes to perform validation
+        self.iterations = 1
         return trainSetShuffled, trainLabelsShuffled
     
 
@@ -605,7 +607,7 @@ class NeuralNetwork:
 
             # calculating moments and moving averages per layer for Adam
             m,v,mBias,vBias = curNode.newMoment(gradient,biasGradient)
-            mHat,vHat,mHatBias,vHatBias = curNode.biasCorrected(m,v,mBias,vBias)
+            mHat,vHat,mHatBias,vHatBias = curNode.biasCorrected(m,v,mBias,vBias,self.iterations)
 
             # lam and/or weightsPerLayer is set o 0 for adam, some positive number O.W. for AdamW
             etaGrad = eta*(mHat / (np.sqrt(vHat) + 1e-8) + lam*weightsPerLayer) 
@@ -619,3 +621,4 @@ class NeuralNetwork:
             curNode.weights = np.repeat(weightsToUpdate[:,:,np.newaxis], self.batchSize, axis=2)
             curNode.bias = np.repeat(biasToUpdate[:,:,np.newaxis], self.batchSize, axis=2)
             curNode = curNode.prev
+        self.iterations += 1
